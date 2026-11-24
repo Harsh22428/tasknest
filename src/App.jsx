@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Auth from './Auth.jsx'
 import Brand from './Brand.jsx'
+import Dashboard from './Dashboard.jsx'
 import { supabase } from './supabase.js'
 
 export default function App() {
@@ -35,11 +36,5 @@ export default function App() {
 
   if (!session) return <Auth />
 
-  return (
-    <main>
-      <Brand />
-      <p>Signed in as {session.user.email}</p>
-      <button type="button" onClick={() => supabase.auth.signOut({ scope: 'local' })}>Sign out</button>
-    </main>
-  )
+  return <Dashboard key={session.user.id} user={session.user} />
 }
