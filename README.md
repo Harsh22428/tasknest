@@ -21,7 +21,9 @@ Vite includes these values in the browser bundle. Use the publishable key, and k
 
 ## Deploy to Vercel
 
-Import the GitHub repository into Vercel and select the **Vite** framework preset. Add both environment variables to the production environment before deploying. Vercel runs `npm run build` and publishes `dist`. If you enabled email confirmation, set the live site URL and any allowed local development redirects in Supabase Auth.
+Import the GitHub repository into Vercel and select the **Vite** framework preset. Add both environment variables to the production environment before deploying. Vercel runs `npm run build` and publishes `dist`.
+
+In Supabase **Authentication → URL Configuration**, set **Site URL** to your production app URL. Signup confirmation emails use this destination even when signup starts on localhost. If a link expires, open the app and attempt to sign in to request a new confirmation email.
 
 After deploying, create two test accounts. With the first account, create, edit, and complete a task, then reload to verify it persists. Switch to the second account and confirm it has its own task list. Return to the first account, delete the task, and sign out.
 

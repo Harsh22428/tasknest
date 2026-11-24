@@ -1,14 +1,31 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Eye, EyeOff, LockKeyhole } from 'lucide-react'
 import Brand from './Brand.jsx'
 import { supabase } from './supabase.js'
 
+const authErrors = {
+  invalid_credentials: 'That email and password combination didn’t work.',
+  email_not_confirmed: 'Confirm your email before signing in. You can request a new link below.',
+}
+
 export default function Auth() {
   const [mode, setMode] = useState('signin')
   const [passwordVisible, setPasswordVisible] = useState(false)
-  const [pending, setPending] = useState(false)
+  const [pending, setPending] = useState(null)
   const [message, setMessage] = useState(null)
   const signingUp = mode === 'signup'
+
+  useEffect(() => {
+    const { hash, pathname, search } = window.location
+    if (new URLSearchParams(hash.slice(1)).get('error_code') !== 'otp_expired') return
+
+    window.history.replaceState(window.history.state, '', pathname + search)
+    setMessage({
+      error: true,
+      canResend: true,
+      text: 'This confirmation link has expired or was already used. Enter your email to request a new link.',
+    })
+  }, [])
 
   function changeMode(nextMode) {
     setMode(nextMode)
@@ -24,29 +41,45 @@ export default function Auth() {
       password: fields.get('password'),
     }
 
-    setPending(true)
+    setPending('submit')
     setMessage(null)
     try {
       const { data, error } = signingUp
-        ? await supabase.auth.signUp({
-          ...credentials,
-          options: { emailRedirectTo: window.location.origin },
-        })
+        ? await supabase.auth.signUp(credentials)
         : await supabase.auth.signInWithPassword(credentials)
 
       if (error) throw error
       if (signingUp && !data.session) {
-        setMessage({ text: 'Check your email for a link to confirm your account.' })
+        setMessage({ canResend: true, text: 'Check your email for a link to confirm your account.' })
       }
     } catch (error) {
       setMessage({
         error: true,
-        text: error.code === 'invalid_credentials'
-          ? 'That email and password combination didn’t work.'
-          : error.message || 'Unable to continue. Please try again.',
+        canResend: error.code === 'email_not_confirmed',
+        text: authErrors[error.code] || error.message || 'Unable to continue. Please try again.',
       })
     } finally {
-      setPending(false)
+      setPending(null)
+    }
+  }
+
+  async function resendConfirmation(event) {
+    const emailInput = event.currentTarget.form.elements.namedItem('email')
+    if (!emailInput.reportValidity()) return
+
+    setPending('resend')
+    try {
+      const { error } = await supabase.auth.resend({ type: 'signup', email: emailInput.value.trim() })
+      if (error) throw error
+      setMessage({ canResend: true, text: 'If that email is awaiting confirmation, a new link is on its way.' })
+    } catch (error) {
+      setMessage({
+        error: true,
+        canResend: true,
+        text: error.message || 'Couldn’t send a new confirmation email. Try again.',
+      })
+    } finally {
+      setPending(null)
     }
   }
 
@@ -62,7 +95,7 @@ export default function Auth() {
           <form onSubmit={submit}>
             <label className="field">
               <span>Email address</span>
-              <input name="email" type="email" autoComplete="email" required placeholder="you@example.com" />
+              <input name="email" type="email" autoComplete="email" required disabled={!!pending} placeholder="you@example.com" />
             </label>
             <div className="field">
               <label htmlFor="password">Password</label>
@@ -75,6 +108,7 @@ export default function Auth() {
                   autoComplete={signingUp ? 'new-password' : 'current-password'}
                   minLength={signingUp ? 8 : undefined}
                   placeholder={signingUp ? 'At least 8 characters' : 'Enter your password'}
+                  disabled={!!pending}
                   required
                 />
                 <button
@@ -82,6 +116,7 @@ export default function Auth() {
                   type="button"
                   onClick={() => setPasswordVisible(!passwordVisible)}
                   aria-label={passwordVisible ? 'Hide password' : 'Show password'}
+                  disabled={!!pending}
                 >
                   {passwordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -92,8 +127,13 @@ export default function Auth() {
                 {message.text}
               </p>
             )}
-            <button className="button primary auth-submit" disabled={pending}>
-              {pending ? 'Please wait…' : signingUp ? 'Create account' : 'Sign in'}
+            {message?.canResend && (
+              <button type="button" className="text-button" onClick={resendConfirmation} disabled={!!pending}>
+                {pending === 'resend' ? 'Sending…' : 'Send a new confirmation email'}
+              </button>
+            )}
+            <button className="button primary auth-submit" disabled={!!pending}>
+              {pending === 'submit' ? 'Please wait…' : signingUp ? 'Create account' : 'Sign in'}
             </button>
           </form>
           <p className="auth-switch">
@@ -101,7 +141,7 @@ export default function Auth() {
             <button
               type="button"
               className="text-button"
-              disabled={pending}
+              disabled={!!pending}
               onClick={() => changeMode(signingUp ? 'signin' : 'signup')}
             >
               {signingUp ? 'Sign in' : 'Create an account'}
