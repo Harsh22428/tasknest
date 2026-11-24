@@ -37,6 +37,7 @@ export default function TaskForm({ task, pending, onSave, onCancel }) {
           name="title"
           defaultValue={task?.title}
           maxLength={160}
+          disabled={pending}
           required
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? 'task-title-error' : undefined}
@@ -47,11 +48,11 @@ export default function TaskForm({ task, pending, onSave, onCancel }) {
       {error && <p className="field-error" id="task-title-error" role="alert">{error}</p>}
       <label className="field">
         <span>Description <span className="optional">(optional)</span></span>
-        <textarea name="description" defaultValue={task?.description} maxLength={2000} rows={3} />
+        <textarea name="description" defaultValue={task?.description} maxLength={2000} rows={3} disabled={pending} />
       </label>
       <label className="field status-field">
         <span>Status</span>
-        <select name="status" defaultValue={task?.status ?? 'todo'}>
+        <select name="status" defaultValue={task?.status ?? 'todo'} disabled={pending}>
           <option value="todo">To do</option>
           <option value="done">Done</option>
         </select>

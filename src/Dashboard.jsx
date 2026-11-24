@@ -74,7 +74,7 @@ export default function Dashboard({ user }) {
         ? current.map((item) => item.id === task.id ? data : item)
         : [data, ...current])
       setEditor(null)
-      setFilter('all')
+      if (!task) setFilter('all')
     }, 'Couldn’t save this task. Your changes are still in the form. Try again.')
   }
 
