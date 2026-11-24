@@ -1,13 +1,13 @@
 # TaskNest
 
-TaskNest is a private task manager. Sign up with your email and password, then create, edit, complete, filter, and delete your tasks. Each task has a title, an optional description, and a **To do** or **Done** status.
+TaskNest is a private task manager. Sign up with your email and password, then create, edit, complete, filter, and delete your tasks. Each task has a title, an optional description, and a status of **Backlog**, **To do**, **Ongoing**, or **Done**. Choose a status when creating or editing a task. New tasks default to **To do**.
 
 **Stack** · React, Vite, and CSS for the UI. Supabase Auth and hosted Postgres for accounts and tasks. The app is ready to deploy on Vercel.
 
 ## Run locally
 
 1. Install Node.js 22.12 or later and run `npm ci`.
-2. Create a [Supabase project](https://database.new). In its SQL Editor, run [the task migration](supabase/migrations/202611240001_create_tasks.sql) once.
+2. Create a [Supabase project](https://database.new). In its SQL Editor, run [Create tasks](supabase/migrations/202611240001_create_tasks.sql) and then [Add task statuses](supabase/migrations/202611240002_add_task_statuses.sql). If your project already has the original TaskNest table, run only the second migration.
 3. Keep the Email provider and new sign-ups enabled in Supabase Auth. For the assignment demo, turn off **Confirm email** so reviewers can create an account immediately. With confirmation enabled, configure custom SMTP to deliver verification links to reviewers.
 4. Copy [.env.example](.env.example) to `.env.local` and fill in the values from your Supabase project's Connect dialog.
 5. Run `npm run dev` and open the local URL printed by Vite.

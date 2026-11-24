@@ -3,9 +3,17 @@ import { Check, ClipboardList, LogOut, Pencil, Plus, Trash2 } from 'lucide-react
 import Brand from './Brand.jsx'
 import TaskForm from './TaskForm.jsx'
 import { supabase } from './supabase.js'
+import { taskStatuses } from './taskStatuses.js'
 
 const taskFields = 'id, title, description, status'
-const filters = [['all', 'All'], ['todo', 'To do'], ['done', 'Done']]
+const filters = [['all', 'All'], ...Object.entries(taskStatuses)]
+const emptyStates = {
+  all: ['No tasks yet', 'Add your first task to get started.'],
+  backlog: ['No tasks in the backlog', 'Choose Backlog when you create or edit a task.'],
+  todo: ['No to-do tasks', 'New tasks start here by default.'],
+  ongoing: ['No ongoing tasks', 'Set a task to Ongoing when you start working on it.'],
+  done: ['No completed tasks', 'Tasks appear here when you mark them done.'],
+}
 
 export default function Dashboard({ user }) {
   const [tasks, setTasks] = useState(null)
@@ -40,9 +48,12 @@ export default function Dashboard({ user }) {
     return () => request.abort()
   }, [loadAttempt])
 
-  const completed = tasks?.filter((task) => task.status === 'done').length ?? 0
-  const counts = { all: tasks?.length ?? 0, todo: (tasks?.length ?? 0) - completed, done: completed }
+  const counts = Object.fromEntries(filters.map(([value]) => [value, 0]))
+  counts.all = tasks?.length ?? 0
+  for (const task of tasks ?? []) counts[task.status] += 1
+
   const visible = tasks?.filter((task) => filter === 'all' || task.status === filter)
+  const [emptyTitle, emptyDescription] = emptyStates[filter]
 
   function openEditor(task) {
     setActionError('')
@@ -127,8 +138,8 @@ export default function Dashboard({ user }) {
         </div>
         {tasks?.length > 0 && (
           <div className="progress-summary">
-            <progress value={completed} max={tasks.length} aria-label="Task completion" />
-            <span>{completed} of {tasks.length} complete</span>
+            <progress value={counts.done} max={tasks.length} aria-label="Task completion" />
+            <span>{counts.done} of {tasks.length} complete</span>
           </div>
         )}
         {editor && <TaskForm task={editor.task} pending={pending} onSave={saveTask} onCancel={() => setEditor(null)} />}
@@ -163,14 +174,8 @@ export default function Dashboard({ user }) {
             {visible.length === 0 ? (
               <div className="empty-state">
                 <span className="empty-icon"><ClipboardList size={25} aria-hidden="true" /></span>
-                <h2>{filter === 'all' ? 'No tasks yet' : filter === 'done' ? 'No completed tasks' : 'Nothing left to do'}</h2>
-                <p className="muted">
-                  {filter === 'all'
-                    ? 'Add your first task to get started.'
-                    : filter === 'done'
-                      ? 'Tasks appear here when you mark them done.'
-                      : 'New tasks will appear here as you add them.'}
-                </p>
+                <h2>{emptyTitle}</h2>
+                <p className="muted">{emptyDescription}</p>
               </div>
             ) : (
               <ul className="task-list">
@@ -181,6 +186,7 @@ export default function Dashboard({ user }) {
                         className="task-check"
                         aria-pressed={task.status === 'done'}
                         aria-label={'Toggle completion for ' + task.title}
+                        title={task.status === 'done' ? 'Move to To do' : 'Mark as done'}
                         onClick={() => toggleTask(task)}
                         disabled={pending || !!editor || !!deleting}
                       >
@@ -190,7 +196,7 @@ export default function Dashboard({ user }) {
                         <h2>{task.title}</h2>
                         {task.description && <p>{task.description}</p>}
                       </div>
-                      <span className={'status-pill ' + task.status}>{task.status === 'done' ? 'Done' : 'To do'}</span>
+                      <span className={'status-pill ' + task.status}>{taskStatuses[task.status]}</span>
                       <div className="task-actions">
                         <button
                           className="icon-button"

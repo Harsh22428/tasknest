@@ -267,6 +267,8 @@ h2 { font-size: 1.125rem; line-height: 1.35; }
   font-weight: 650;
   white-space: nowrap;
 }
+.status-pill.backlog { background: #edf0f5; color: #43546b; }
+.status-pill.ongoing { background: #f8efda; color: #684a16; }
 .status-pill.done { background: var(--accent-soft); color: var(--accent-hover); }
 
 .empty-state { display: grid; justify-items: center; gap: .5rem; padding: 3rem 1rem; text-align: center; }

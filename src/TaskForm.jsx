@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { taskStatuses } from './taskStatuses.js'
 
 export default function TaskForm({ task, pending, onSave, onCancel }) {
   const titleInput = useRef(null)
@@ -50,13 +51,14 @@ export default function TaskForm({ task, pending, onSave, onCancel }) {
         <span>Description <span className="optional">(optional)</span></span>
         <textarea name="description" defaultValue={task?.description} maxLength={2000} rows={3} disabled={pending} />
       </label>
-      <label className="field status-field">
-        <span>Status</span>
-        <select name="status" defaultValue={task?.status ?? 'todo'} disabled={pending}>
-          <option value="todo">To do</option>
-          <option value="done">Done</option>
+      <div className="field status-field">
+        <label htmlFor="task-status">Status</label>
+        <select id="task-status" name="status" defaultValue={task?.status ?? 'todo'} disabled={pending}>
+          {Object.entries(taskStatuses).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
         </select>
-      </label>
+      </div>
       <div className="form-actions">
         <button className="button secondary" type="button" onClick={onCancel} disabled={pending}>Cancel</button>
         <button className="button primary" disabled={pending}>
